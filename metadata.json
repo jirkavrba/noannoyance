@@ -6,5 +6,5 @@
   "settings-schema": "org.gnome.shell.extensions.noannoyance-fork",
   "shell-version": ["45", "46"],
   "url": "https://github.com/jirkavrba/noannoyance",
-  "uuid": "noannoyance-fork@vrba.dev"
+  "uuid": "noannoyance-fork@jirkavrba"
 }

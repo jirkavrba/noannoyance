@@ -14,5 +14,5 @@ This is a fork of https://github.com/sindex/no-annoyance, so thank you Alex for 
 
 ## Installation
 1. Run `git clone git@github.com:jirkavrba/noannoyance.git`
-2. Run `mv noannoyance ~/.local/share/gnome-shell/extensions/noannoyance@vrba.dev`
+2. Run `mv noannoyance ~/.local/share/gnome-shell/extensions/noannoyance-fork@jirkavrba`
 3. Activate the extension in GNOME Tweaks
