@@ -1,108 +1,108 @@
-// Based on https://github.com/ubuntu/gnome-shell-extension-appindicator
+import Gio from "gi://Gio";
+import Gtk from "gi://Gtk";
+import GObject from "gi://GObject";
+import Adw from "gi://Adw";
 
-import Gio from 'gi://Gio';
-import Gtk from 'gi://Gtk';
-import GObject from 'gi://GObject';
-import Adw from 'gi://Adw';
+import { ExtensionPreferences } from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js";
 
-import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
-
-const WMCLASS_LIST = 'by-class';
-const IGNORELIST_ENABLED = 'enable-ignorelist';
+const BLOCKLIST_KEY = "blocklist";
 
 export default class Preferences extends ExtensionPreferences {
-    fillPreferencesWindow(window) {
-        let settings = this.getSettings();
+  fillPreferencesWindow(window) {
+    let settings = this.getSettings();
 
-        const page = new Adw.PreferencesPage({
-            title: 'General',
-            icon_name: 'dialog-information-symbolic',
-        });
+    const page = new Adw.PreferencesPage({
+      title: "General",
+      icon_name: "dialog-information-symbolic",
+    });
 
-        const group = new Adw.PreferencesGroup({
-            title: 'Settings',
-        });
-        page.add(group);
+    const group = new Adw.PreferencesGroup({
+      title: "Ignored Apps",
+      description:
+        "Some apps try to grab your attention too often. Block them here!",
+    });
+    page.add(group);
 
-        let toggle = new Adw.SwitchRow({
-            title: "Enable Ignorelist",
-        });
+    const originalBlocklist = settings.get_strv(BLOCKLIST_KEY);
+    const newBlocklist = new Set(originalBlocklist);
 
-        group.add(toggle);
+    const updateBlocklist = () => {
+      const newBlocklistArr = Array.from(newBlocklist);
+      newBlocklistArr.sort();
+      settings.set_strv(BLOCKLIST_KEY, newBlocklistArr);
+    };
 
-        settings.bind(
-            IGNORELIST_ENABLED,
-            toggle,
-            "active",
-            Gio.SettingsBindFlags.DEFAULT
-        );
+    const addRow = (value, isNew) => {
+      const row = new Adw.ActionRow({
+        title: value,
+      });
 
-        let expander = new Adw.ExpanderRow({
-            title: 'WM__CLASS List ("Alt + F2" > Run "lg" > Click "Windows")',
-        });
+      if (isNew) newBlocklist.add(value);
 
-        const customListStore = new Gtk.ListStore();
-        customListStore.set_column_types([GObject.TYPE_STRING]);
-        const customInitArray = settings.get_strv(WMCLASS_LIST);
-        for (let i = 0; i < customInitArray.length; i++) {
-            customListStore.set(customListStore.append(), [0], [customInitArray[i]]);
+      const removeButton = new Gtk.Button({
+        icon_name: "user-trash-symbolic",
+      });
+      removeButton.get_style_context().add_class("flat");
+      row.add_suffix(removeButton);
+
+      group.add(row);
+
+      removeButton.connect("clicked", () => {
+        group.remove(row);
+        newBlocklist.delete(row.title);
+        updateBlocklist();
+      });
+    };
+
+    const addOldRow = (value) => {
+      addRow(value, false);
+    };
+    const addNewRow = (value) => {
+      addRow(value, true);
+    };
+
+    originalBlocklist.forEach(addOldRow);
+
+    const addByWmClass = () => {
+      const dialog = new Adw.MessageDialog({
+        transient_for: window,
+        modal: true,
+      });
+
+      dialog.set_heading("Enter WM__CLASS");
+      dialog.set_body("If you need help finding the WM__CLASS, press \"Alt + F2\", run \"lg\" in the run opened window, and then click \"Windows\" and search for the 'WM_CLASS' of the apps you want to ignore.");
+
+      const entry = new Adw.EntryRow();
+      entry.set_title('WM_CLASS to ignore');
+      dialog.set_extra_child(entry);
+
+      dialog.add_response("cancel", "Cancel");
+      dialog.add_response("add", "Add");
+      dialog.set_default_response("add");
+      dialog.set_response_appearance("add", Adw.ResponseAppearance.SUGGESTED);
+
+      dialog.connect("response", (dialog, response) => {
+        if (response === "add") {
+          const text = entry.get_text();
+          if (text) {
+            addNewRow(text);
+            updateBlocklist();
+          }
         }
-        customListStore.append();
+        dialog.destroy();
+      });
 
-        const customTreeView = new Gtk.TreeView({
-            model: customListStore,
-            hexpand: true,
-            vexpand: true,
-        });
+      dialog.show();
+    };
 
-        const indicatorIdColumn = new Gtk.TreeViewColumn({
-            title: 'Name',
-            sizing: Gtk.TreeViewColumnSizing.AUTOSIZE,
-        });
+    const byRawEnter = new Gtk.Button({
+      icon_name: "window-new-symbolic",
+    });
+    byRawEnter.get_style_context().add_class("flat");
+    byRawEnter.connect("clicked", addByWmClass);
 
-        const cellrenderer = new Gtk.CellRendererText({
-            editable: true,
-        });
+    group.set_header_suffix(byRawEnter);
 
-        indicatorIdColumn.pack_start(cellrenderer, true);
-        indicatorIdColumn.add_attribute(cellrenderer, "text", 0);
-        customTreeView.insert_column(indicatorIdColumn, 0);
-        customTreeView.set_grid_lines(Gtk.TreeViewGridLines.BOTH);
-
-        expander.add_suffix(customTreeView);
-        group.add(expander);
-
-        cellrenderer.connect("edited", (w, path, text) => {
-            this.selection = customTreeView.get_selection();
-            const selection = this.selection.get_selected();
-            const iter = selection[2];
-
-            customListStore.set(iter, [0], [text]);
-            const storeLength = customListStore.iter_n_children(null);
-            const customIconArray = [];
-
-            for (let i = 0; i < storeLength; i++) {
-                const returnIter = customListStore.iter_nth_child(null, i);
-                const [success, iterList] = returnIter;
-                if (!success) break;
-
-                if (iterList) {
-                    const id = customListStore.get_value(iterList, 0);
-                    if (id) customIconArray.push(id);
-                } else {
-                    break;
-                }
-            }
-            settings.set_strv(WMCLASS_LIST, customIconArray);
-
-            if (storeLength === 1 && text) customListStore.append();
-
-            if (storeLength > 1) {
-                if (!text && storeLength - 1 > path) customListStore.remove(iter);
-                if (text && storeLength - 1 <= path) customListStore.append();
-            }
-        });
-
-        window.add(page);
-    }
+    window.add(page);
+  }
 }
