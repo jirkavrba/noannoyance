@@ -1,18 +1,31 @@
 # NoAnnoyance (fork)
 
-This extension is a fork of the original, that adds support for GNOME 45 and 46
+Another extension that removes the annoying 'Window is ready' notifications,
+opting to bring 'ready' windows to focus.
 
 ## About
-Another extension, that removes the 'Window is ready' notification and puts the window into focus.  
-In contrast to all the other extensions, this uses ES6 syntax and is actively maintained.
 
-This is a fork of https://github.com/sindex/no-annoyance, so thank you Alex for the work you already made.
+NoAnnoyance has had many maintainers and notable contributors:
+* [@kagesenshi / Izhar Firdaus](https://github.com/kagesenshi/gnome-shell-extension-stealmyfocus)
+* [@sindex / Alex Papachristou](https://github.com/sindex/no-annoyance)
+* [@bdaase / Björn Daase](https://github.com/bdaase/noannoyance)
+* [@jirkavrba / Jiří Vrba](https://github.com/jirkavrba/noannoyance)
+
+A huge "Thank you!" goes out to all maintainers and contributors! :)
 
 ## Supported GNOME versions
 - 45
 - 46
 
 ## Installation
+
+You can install the latest stable version from
+[extensions.gnome.org](https://extensions.gnome.org/extension/6109/noannoyance-fork/).
+Alternatively, if you'd like to use the latest unstable version, you can use a
+manual installation, as described below.
+
+### Manually
+
 1. Run `git clone git@github.com:jirkavrba/noannoyance.git`
 2. Run `mv noannoyance ~/.local/share/gnome-shell/extensions/noannoyance@vrba.dev`
-3. Activate the extension in GNOME Tweaks
+3. Activate the extension in the GNOME Extensions manager
